@@ -15,7 +15,7 @@ eb_sightings2 <- function (file, countable = FALSE)
   stopifnot(is.character(file), length(file) == 1, file.exists(file))
   col_formats <- readr::cols(.default = readr::col_character(), 
                              Latitude = readr::col_double(), Longitude = readr::col_double(),
-                             Time = readr::col_time(format = "%I:%M %p"), Date = readr::col_date(format = "%m/%d/%y"), 
+                             Time = readr::col_time(format = "%I:%M %p"), Date = readr::col_date(), 
                              `Duration (Min)` = readr::col_integer(), `All Obs Reported` = readr::col_logical(), 
                              `Distance Traveled (km)` = readr::col_double(),`Area Covered (ha)` = readr::col_double(), `Number of Observers` = readr::col_integer())
   s <- suppressWarnings(readr::read_csv(file, col_types = col_formats, 

@@ -32,8 +32,8 @@ counts.
 working with the current My eBird export. I think some of the headers
 and date/time formats have changed. I developed the workaround below.
 
-You’ll need to download the Excel version of the 2019 eBird Taxonomy,
-available here:
+If you don’t have it, you’ll need to download the Excel version of the
+2019 eBird Taxonomy, available here:
 <https://www.birds.cornell.edu/clementschecklist/download/>
 
 First, these two attached scripts format the 2019 taxonomy properly for
@@ -59,7 +59,7 @@ Note that `eb_sightings2` no longer explicitly defines date format.
 Check the outputs to make sure the dates came through properly.
 
 ``` r
-ebird_data <-  eb_sightings2("MyEBirdData_8-7-20.csv") #may throw a warning about parsing issues from NAs in effort; not a big problem
+ebird_data <-  eb_sightings2("MyEBirdData_10-9-20.csv") #may throw a warning about parsing issues from NAs in effort; not a big problem
 
 day_lists <- eb_lifelist_day2(ebird_data)
 ```
@@ -71,7 +71,7 @@ plot over the course of the year with the `plot` function.
 plot(day_lists)
 ```
 
-    ## Warning: Removed 18 rows containing missing values (geom_bar).
+    ## Warning: Removed 17 rows containing missing values (geom_bar).
 
 ![](auklet-exp_files/figure-gfm/linear_day_list-1.png)<!-- -->
 
@@ -105,24 +105,16 @@ species are my main targets. I decided to bin the numbers to more easily
 identify target days for birding.
 
 ``` r
-counts$bin <- "a"
+# bin colors using dplyr case_when
+# 
 
-# bin colors using nested if-else
-for (i in 1:nrow(counts)) {
-if(counts$n[i] == 0) {
-  counts$bin[i] <- "0"
-} else {
-  if(counts$n[i] < 50) {
-    counts$bin[i] <- "1-49"
-  } else {
-    if(counts$n[i] <100) {
-      counts$bin[i] <- "50-99"
-    }
-    else{counts$bin[i] <- "100+"
-    }
-  }
-}
-}
+counts <- counts %>% 
+  mutate(
+    bin = case_when(
+      n > 100 ~ "100+",
+      n < 100 & n > 49 ~ "50-99",
+      n < 50 & n > 0 ~ "1-49",
+      n == 0 ~ "0"))
 
 counts$bin <- factor(counts$bin, levels = c("0","1-49","50-99","100+"))
 
@@ -186,6 +178,7 @@ t11 <- tibble(date = upcoming$date) %>%
   mutate(month = factor(month, levels = months1, ordered = TRUE)) %>% 
   arrange(year,month)
 
+
 # plot
 ggcal(upcoming$date,upcoming$bin) +
   scale_fill_viridis_d(begin = .5, end = 1) + # limiting the colors of viridis to lighter colors w/ black labels
@@ -195,7 +188,27 @@ ggcal(upcoming$date,upcoming$bin) +
 
 ![](auklet-exp_files/figure-gfm/bin_num_cal-1.png)<!-- -->
 
+#### Add Day List Totals
+
+The bins help me identify which days to go birding, but they don’t tell
+me how close I am to reaching a threshold, so I’ve added this code to
+write the Day list totals on the calendar:
+
+``` r
+full <- left_join(t11, upcoming, by="date")
+
+# plot
+ggcal(full$date,full$bin) +
+  scale_fill_viridis_d(begin = .5, end = 1) + # limiting the colors of viridis to lighter colors w/ black labels
+  ggtitle("Upcoming 2020 Day Lists") +
+  geom_text(aes(label=full$dom), size = 2.7, nudge_x = -.2, nudge_y = .3) + #adds and positions days
+  geom_text(aes(label=full$n), size=3.5, nudge_y=-.1,family="mono", fontface="bold") #adds day totals
+```
+
+    ## Warning: Removed 27 rows containing missing values (geom_text).
+
+![](auklet-exp_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
 ## Future Improvements
 
   - Enable crossing over into the next year
-  - Make labels more visible
